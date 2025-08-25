@@ -74,7 +74,7 @@ fun RecoverPassword(goBack: () -> Unit) {
                     onClick = { /* TODO: send recover password mail */ }
                 )
 
-                LinkButton(text = "Volver", onClick = goBack)
+                LinkButton(text = "Volver", onClick = goBack, modifier = Modifier.fillMaxWidth())
             }
         }
     }
