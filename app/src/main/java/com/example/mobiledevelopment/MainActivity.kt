@@ -6,9 +6,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.mobiledevelopment.helper.AuthHelper
+import com.example.mobiledevelopment.model.User
 import com.example.mobiledevelopment.ui.theme.NutriGoTheme
 
 class MainActivity : ComponentActivity() {
@@ -17,6 +21,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             NutriGoTheme {
+                // Save a default user
+                AuthHelper.saveUser(User("dsantander", "admin", "Daniel", "Santander", "dsantander@duocuc.cl", "+56999999999", 1000000000000))
                 AppNavigation()
             }
         }
@@ -35,13 +41,36 @@ fun AppNavigation() {
             )
         }
         composable(Routes.Login){
-            Login(goToRegister = { navController.navigate(Routes.Register) }, goToRecoverPassword = { navController.navigate(Routes.RecoverPassword)}, goBack = { navController.navigateUp()})
+            Login(goToRegister = { navController.navigate(Routes.Register) }, goToRecoverPassword = { navController.navigate(Routes.RecoverPassword)}, goBack = { navController.navigateUp()},
+                goHome={ userName ->
+                    navController.navigate(HomeDest.create(userName)) {
+                        popUpTo(Routes.Landing) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                }
+            )
         }
         composable(Routes.Register){
             Register(goBack = { navController.navigateUp()})
         }
         composable(Routes.RecoverPassword){
             RecoverPassword(goBack = { navController.navigateUp()})
+        }
+        composable(
+            route = HomeDest.fullRoute,
+            arguments = listOf(navArgument(HomeDest.argUser) { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userName = backStackEntry.arguments?.getString(HomeDest.argUser) ?: "Invitado"
+
+            HomeWithDrawer(
+                userName = userName,
+                onLogout = {
+                    navController.navigate(Routes.Login) {
+                        popUpTo(Routes.Landing) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                }
+            )
         }
     }
 

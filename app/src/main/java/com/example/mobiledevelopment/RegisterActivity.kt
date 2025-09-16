@@ -1,5 +1,6 @@
 package com.example.mobiledevelopment
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -42,6 +44,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.mobiledevelopment.helper.AuthHelper
+import com.example.mobiledevelopment.model.User
 import com.example.mobiledevelopment.shared.DatePickerModal
 import com.example.mobiledevelopment.shared.NavBar
 import com.example.mobiledevelopment.shared.convertMillisToDate
@@ -63,6 +67,8 @@ fun Register(goBack: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var birthdate by remember { mutableStateOf<Long?>(null) }
+
+    val context = LocalContext.current
 
     Scaffold(topBar = { NavBar(title = "Registro", screenDescription = "Pantalla de registro, ingresa tus datos para registrarte.", goBack = goBack) }) { padding ->
         Box(
@@ -140,7 +146,6 @@ fun Register(goBack: () -> Unit) {
                     )
                 )
 
-                // accessible date picker (readOnly + abre modal)
                 OutlinedTextField(
                     value = birthdate?.let { convertMillisToDate(it) } ?: "",
                     onValueChange = {},
@@ -155,10 +160,15 @@ fun Register(goBack: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 56.dp)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { showModal = true }
+                        .pointerInput(showModal) {
+                            awaitEachGesture {
+                                awaitFirstDown(pass = PointerEventPass.Initial)
+                                val up = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                                if (up != null) {
+                                    showModal = true
+                                }
+                            }
+                        }
                         .semantics {
                             role = Role.Button
                             contentDescription =
@@ -166,7 +176,17 @@ fun Register(goBack: () -> Unit) {
                         }
                 )
 
-                PrimaryButton(text = "Registrarme", onClick = { /* TODO: guardar datos */ })
+                PrimaryButton(text = "Registrarme", onClick = {
+                    val result = AuthHelper.saveUser(User(username, password, name, lastName, email, phone, birthdate))
+                    if (result.ok) {
+                        goBack()
+                    }
+                    else {
+                        result.errors.forEach {
+                            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                })
 
                 LinkButton(text = "Volver", onClick = goBack, modifier = Modifier.fillMaxWidth())
             }

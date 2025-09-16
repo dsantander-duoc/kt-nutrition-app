@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.SpeakerNotes
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,22 +23,38 @@ import com.example.mobiledevelopment.accessibility.speakPolite
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NavBar(title: String, screenDescription: String, showGoBack: Boolean = true, goBack: () -> Unit = {}) {
+fun NavBar(
+        title: String,
+        screenDescription: String,
+        showGoBack: Boolean = true,
+        goBack: () -> Unit = {},
+        hasDrawer: Boolean = false,
+        onMenuClick: () -> Unit = {}
+    ) {
     val context = LocalContext.current
     val tts = rememberTTS(context)
 
     TopAppBar(
         title = { Text(title, modifier = Modifier.semantics { heading() }) },
         navigationIcon = {
-            if (showGoBack) {
-                IconButton(
-                    onClick = goBack,
-                    modifier = Modifier.semantics {
-                        role = Role.Button
-                        contentDescription = "Volver"
-                    }
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+            when {
+                hasDrawer -> {
+                    IconButton(
+                        onClick = onMenuClick,
+                        modifier = Modifier.semantics {
+                            role = Role.Button
+                            contentDescription = "Abrir menú de navegación"
+                        }
+                    ) { Icon(Icons.Filled.Menu, contentDescription = null) }
+                }
+                showGoBack -> {
+                    IconButton(
+                        onClick = goBack,
+                        modifier = Modifier.semantics {
+                            role = Role.Button
+                            contentDescription = "Volver"
+                        }
+                    ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) }
                 }
             }
         },
@@ -48,9 +65,7 @@ fun NavBar(title: String, screenDescription: String, showGoBack: Boolean = true,
                     role = Role.Button
                     contentDescription = "Describir pantalla"
                 }
-            ){
-                Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null)
-            }
+            ) { Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null) }
         }
     )
 }

@@ -1,5 +1,6 @@
 package com.example.mobiledevelopment
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,11 +20,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.mobiledevelopment.helper.AuthHelper
 import com.example.mobiledevelopment.shared.NavBar
 import com.example.mobiledevelopment.ui.components.AccessibleTextField
 import com.example.mobiledevelopment.ui.components.LinkButton
@@ -33,10 +36,11 @@ import com.example.mobiledevelopment.ui.components.clearFocusOnTapOutside
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Login(goToRegister: () -> Unit, goToRecoverPassword: () -> Unit, goBack: () -> Unit) {
+fun Login(goToRegister: () -> Unit, goToRecoverPassword: () -> Unit, goBack: () -> Unit, goHome: (String) -> Unit) {
     val focusManager = LocalFocusManager.current
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     Scaffold(topBar = { NavBar(title = "Bienvenido a NutriGO!", screenDescription = "Pantalla de inicio de sesión, ingresa usuario y clave. Si no recuerdas tu clave puedes recuperarla. Si no tienes una cuenta, puedes registrarte.", goBack = goBack) }) { padding ->
         Box(
@@ -79,7 +83,15 @@ fun Login(goToRegister: () -> Unit, goToRecoverPassword: () -> Unit, goBack: () 
                     imeAction = ImeAction.Done
                 )
 
-                PrimaryButton(text = "Iniciar sesión", onClick = { /* TODO login */ })
+                PrimaryButton(text = "Iniciar sesión", onClick = {
+                    val result = AuthHelper.login(username, password)
+                    if (result.ok && result.user != null) {
+                        goHome(result.user.name)
+                    }
+                    else {
+                        Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
+                    }
+                })
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
