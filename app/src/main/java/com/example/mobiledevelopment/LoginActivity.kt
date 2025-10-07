@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +34,7 @@ import com.example.mobiledevelopment.ui.components.LinkButton
 import com.example.mobiledevelopment.ui.components.PrimaryButton
 import com.example.mobiledevelopment.ui.components.SecondaryButton
 import com.example.mobiledevelopment.ui.components.clearFocusOnTapOutside
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +43,7 @@ fun Login(goToRegister: () -> Unit, goToRecoverPassword: () -> Unit, goBack: () 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     Scaffold(topBar = { NavBar(title = "Bienvenido a NutriGO!", screenDescription = "Pantalla de inicio de sesión, ingresa usuario y clave. Si no recuerdas tu clave puedes recuperarla. Si no tienes una cuenta, puedes registrarte.", goBack = goBack) }) { padding ->
         Box(
@@ -84,13 +87,16 @@ fun Login(goToRegister: () -> Unit, goToRecoverPassword: () -> Unit, goBack: () 
                 )
 
                 PrimaryButton(text = "Iniciar sesión", onClick = {
-                    val result = AuthHelper.login(username, password)
-                    if (result.ok && result.user != null) {
-                        goHome(result.user.name)
+                    scope.launch {
+                        val result = AuthHelper.login(context,username, password)
+                        if (result.ok && result.user != null) {
+                            goHome(result.user.name)
+                        }
+                        else {
+                            Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
+                        }
                     }
-                    else {
-                        Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
-                    }
+
                 })
 
                 Row(

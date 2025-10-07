@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,8 +45,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.mobiledevelopment.data.User
 import com.example.mobiledevelopment.helper.AuthHelper
-import com.example.mobiledevelopment.model.User
 import com.example.mobiledevelopment.shared.DatePickerModal
 import com.example.mobiledevelopment.shared.NavBar
 import com.example.mobiledevelopment.shared.convertMillisToDate
@@ -53,6 +54,7 @@ import com.example.mobiledevelopment.ui.components.AccessibleTextField
 import com.example.mobiledevelopment.ui.components.LinkButton
 import com.example.mobiledevelopment.ui.components.PrimaryButton
 import com.example.mobiledevelopment.ui.components.clearFocusOnTapOutside
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,6 +71,7 @@ fun Register(goBack: () -> Unit) {
     var birthdate by remember { mutableStateOf<Long?>(null) }
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     Scaffold(topBar = { NavBar(title = "Registro", screenDescription = "Pantalla de registro, ingresa tus datos para registrarte.", goBack = goBack) }) { padding ->
         Box(
@@ -177,15 +180,20 @@ fun Register(goBack: () -> Unit) {
                 )
 
                 PrimaryButton(text = "Registrarme", onClick = {
-                    val result = AuthHelper.saveUser(User(username, password, name, lastName, email, phone, birthdate))
-                    if (result.ok) {
-                        goBack()
-                    }
-                    else {
-                        result.errors.forEach {
-                            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                    scope.launch {
+                        val result = AuthHelper.saveUser(context,
+                            User(username=username, password=password, name=name, lastName=lastName, email=email, phone=phone, birthdate=birthdate)
+                        )
+                        if (result.ok) {
+                            goBack()
+                        }
+                        else {
+                            result.errors.forEach {
+                                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
+
                 })
 
                 LinkButton(text = "Volver", onClick = goBack, modifier = Modifier.fillMaxWidth())

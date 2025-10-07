@@ -21,8 +21,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             NutriGoTheme {
-                // Save a default user
-                AuthHelper.saveUser(User("dsantander", "admin", "Daniel", "Santander", "dsantander@duocuc.cl", "+56999999999", 1000000000000))
                 AppNavigation()
             }
         }

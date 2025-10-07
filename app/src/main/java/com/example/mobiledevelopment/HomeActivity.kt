@@ -1,5 +1,6 @@
 package com.example.mobiledevelopment
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,10 @@ fun HomeWithDrawer(
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+    val isLogged = prefs.getBoolean("isLogged", false)
+    val name = prefs.getString("name", null)
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -63,8 +68,8 @@ fun HomeWithDrawer(
         Scaffold(
             topBar = {
                 NavBar(
-                    title = "Hola, $userName 👋",
-                    screenDescription = "Pantalla de inicio. Hola $userName. Acciones disponibles: Generar receta, Mis recetas y Cerrar sesión.",
+                    title = "Hola, $name 👋",
+                    screenDescription = "Pantalla de inicio. Hola $name. Acciones disponibles: Generar receta, Mis recetas y Cerrar sesión.",
                     showGoBack = false,
                     hasDrawer = true,
                     onMenuClick = { scope.launch { drawerState.open() } }

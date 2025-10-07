@@ -1,10 +1,13 @@
 package com.example.mobiledevelopment.helper
 
+import android.content.Context
 import android.util.Patterns
-import com.example.mobiledevelopment.model.User
+import com.example.mobiledevelopment.data.AppDatabase
+import com.example.mobiledevelopment.data.User
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object AuthHelper {
-    val users = mutableListOf<User>()
 
     data class ValidationResult(
         val ok: Boolean,
@@ -17,13 +20,20 @@ object AuthHelper {
         val user: User? = null
     )
 
-    fun validateRegisterForm(username: String, password: String, name: String, lastName: String, email: String, phone: String, birthdate: Long?): ValidationResult {
+    suspend fun validateRegisterForm(context: Context, username: String, password: String, name: String, lastName: String, email: String, phone: String, birthdate: Long?): ValidationResult {
         val errors = mutableListOf<String>()
-        if (users.any { it.username == username }) {
-            errors.add("El nombre de usuario ya está en uso")
-        }
-        if (users.any { it.email == email }) {
-            errors.add("El email ya está en uso")
+
+        withContext(Dispatchers.IO) {
+            val db = AppDatabase.getDatabase(context)
+            val userExists = db.userDao().searchByUsername(username)
+            if (userExists != null) {
+                errors.add("El nombre de usuario ya está en uso")
+            }
+
+            val emailExists = db.userDao().searchByEmail(email)
+            if (emailExists != null) {
+                errors.add("El email ya está en uso")
+            }
         }
 
         if (username.isBlank()) {
@@ -57,24 +67,45 @@ object AuthHelper {
         return ValidationResult(errors.isEmpty(), errors)
     }
 
-    fun saveUser(user: User): ValidationResult {
-        val valid = validateRegisterForm(user.username, user.password, user.name, user.lastName, user.email, user.phone, user.birthdate)
+    suspend fun saveUser(context: Context, user: User): ValidationResult {
+        val valid = validateRegisterForm(context,user.username, user.password, user.name, user.lastName, user.email, user.phone, user.birthdate)
 
-        if (valid.ok) {
-            users.add(user)
-            return ValidationResult(true)
+        if (!valid.ok) {
+            return valid
         }
 
-        return valid
+        return withContext(Dispatchers.IO) {
+            try {
+                val db = AppDatabase.getDatabase(context)
+                db.userDao().insert(user)
+                ValidationResult(true)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                ValidationResult(false, listOf("Error al guardar el usuario"))
+            }
+        }
     }
 
-    fun login(username: String, password: String): LoginResult {
-        val user = users.find { it.username == username && it.password == password }
-        return if (user != null) {
-            LoginResult(true, "Inicio de sesión exitoso",  user)
-        }
-        else {
-            LoginResult(false, "Nombre de usuario o contraseña incorrectos")
+    suspend fun login(context: Context, username: String, password: String): LoginResult {
+        return withContext(Dispatchers.IO) {
+            val db = AppDatabase.getDatabase(context)
+            val usuario = db.userDao().searchByUsername(username)
+
+            if (usuario == null) {
+                LoginResult(false, "Nombre de usuario no encontrado")
+            } else if (usuario.password != password) {
+                LoginResult(false, "Contraseña incorrecta")
+            } else {
+
+                val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                prefs.edit()
+                    .putBoolean("isLogged", true)
+                    .putString("email", usuario.email)
+                    .putString("name", usuario.name)
+                    .apply()
+
+                LoginResult(true, "Inicio de sesión exitoso",  usuario)
+            }
         }
     }
 }
