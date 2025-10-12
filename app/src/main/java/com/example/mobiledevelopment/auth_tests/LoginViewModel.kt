@@ -15,4 +15,19 @@ class LoginViewModel(private val repo: AuthRepository) {
             result
         }
     }
+
+    fun register(user: User): ValidationResult {
+        if (user.username.isBlank() || user.name.isBlank() || user.password.isBlank()) {
+            return ValidationResult(false, listOf("Campos vacíos"))
+        }
+
+        val result = repo.register(user)
+
+        return if (result.ok) {
+            ValidationResult(true)
+        } else {
+            result
+        }
+
+    }
 }
